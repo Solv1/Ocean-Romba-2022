@@ -1,2 +1,4 @@
 # Senior_Project
-Sensor and Integration software for the Ocean Romba 
+Software that's used to integrate lidar sensors, 
+servo motor, thruster, oil sensor for the Ocean-Romba
+craft. 
