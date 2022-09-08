@@ -100,7 +100,7 @@ void loop()
     
   if ((tfDist2 <= 62 && tfDist4 <= 62) || (tfDist3 <= 62 && tfDist4 <= 62) || (tfDist3 <= 62 && tfDist2 >= 62 && tfDist4 >= 62) || (tfDist4 <= 62))
   {
-    servo.write(servoRight);
+      servo.write(servoRight);
       thruster.writeMicroseconds(1350);
       if(currentMillis - previousMillis > interval) //should wait for 10 seconds before turning off thruster.
     {
@@ -110,7 +110,7 @@ void loop()
   }
   else if ((tfDist1 <= 62 && tfDist2 <= 62) || (tfDist1 <= 62 && tfDist2 >= 62 && tfDist4 >= 62) || (tfDist2 <= 62)) 
   {
-    servo.write(servoLeft);
+      servo.write(servoLeft);
       thruster.writeMicroseconds(1350);
       if(currentMillis - previousMillis > interval) //should wait for 10 seconds before turning off thruster.
     {
@@ -120,7 +120,7 @@ void loop()
   }
   else
   {
-    servo.write(servoMid);
+      servo.write(servoMid);
       thruster.writeMicroseconds(1350);
       if(currentMillis - previousMillis > interval) //should wait for 10 seconds before turning off thruster.
     {
