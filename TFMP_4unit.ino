@@ -26,7 +26,7 @@ char distStr[6];      // distance data string
 unsigned long previousMillis = 0UL;
 const long interval = 10000UL;
   
-void example_commands( uint8_t addr)
+void commands( uint8_t addr)
 {
     printf("Set up device at address 0x%2x\r\n", addr);
     // - - Perform a system reset - - - - - - - - - - -
@@ -80,10 +80,10 @@ void setup()
                                // your Arduino supports 400KHz.
 
     // Send lidar addresses to interface with
-    example_commands( 0x10);
-    example_commands( 0x14);
-    example_commands( 0x18);
-    example_commands( 0x1C);
+    commands( 0x10);
+    commands( 0x14);
+    commands( 0x18);
+    commands( 0x1C);
 }
 
 void loop()
