@@ -6,12 +6,18 @@ Additonaly to pump water in and out of the sampling area.
 */
 #include "SparkFun_AS7265X.h"
 
+#define RELAY_PIN 7
+#define LED_READY 8
+#define LED_SENSE 9
+
 AS7265X Sensor;
 
 float cal410, cal435, cal460;
 
 void pumpWater(){
-  
+   digitalWrite(RELAY_PIN, HIGH);
+   delay(1000);
+   digitalWrite(RELAY_PIN, LOW);
 }
 
 void calibration(){
@@ -21,7 +27,7 @@ void calibration(){
   float a460 = 0;
   Sensor.disableIndicator();
   for(int i = 0; i < 10; i++){
-    //pump water in
+    pumpWater();
     Sensor.enableBulb(AS7265x_LED_UV);
     Sensor.takeMeasurements();
     Sensor.disableBulb(AS7265x_LED_UV);
@@ -48,6 +54,9 @@ void calibration(){
 }
 
 void setup() {
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(LED_READY, OUTPUT);
+  pinMode(LED_SENSE, OUTPUT);
   Serial.begin(115200);
   if (Sensor.begin() == false)  
   {
@@ -60,7 +69,7 @@ void setup() {
 
 void loop() {
   float wave410, wave435, wave460;
-  // need to add PUMP action code
+  pumpWater();
   Sensor.enableBulb(AS7265x_LED_UV);
   Sensor.takeMeasurements();
   Sensor.disableBulb(AS7265x_LED_UV);
@@ -73,15 +82,19 @@ void loop() {
   // Note that orginal constant values were obtained using 10 W 40 motor oil with a white background. Results may vary with different backgrounds.
   if(wave410 < cal410 - 1400){
     Serial.println("Oil Detected with 410nm wavelength");
+    digitalWrite(LED_SENSE,HIGH);
   }
   else if(wave435 > cal435 + 100){
     Serial.println("Oil Detected with 435nm wavelength");
+    digitalWrite(LED_SENSE,HIGH);
   }
   else if(wave460 < 150){
     Serial.println("Oil Detected with 460nm Wavelength");
+    digitalWrite(LED_SENSE,HIGH);
   }
   else{
     Serial.println("Oil Not Detected Yet");
+    digitalWrite(LED_SENSE,LOW);
   }
   /*
   *for testing purposes
@@ -90,7 +103,7 @@ void loop() {
   *Serial.print(wave435);
   *Serial.print(" , ");
   *Serial.print(wave460);
-  *Serial.print("|");
+  *Serial.print("| ");
   */
   
 
