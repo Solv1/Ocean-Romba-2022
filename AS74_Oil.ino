@@ -12,75 +12,77 @@ Additonaly to pump water in and out of the sampling area.
 
 AS7265X Sensor;
 
-float cal410, cal435, cal460;
+float uv_cal, ir_cal; // UV Wavelength Value is 410nm, IR Wavelength Value is 860nm
 
-void pumpWater(){
+void pumpWater(int duration){
    digitalWrite(RELAY_PIN, HIGH);
-   delay(1000);
+   delay(duration * 100);
    digitalWrite(RELAY_PIN, LOW);
 }
 
 void calibration(){
   Serial.println("Calibration in progress please wait...");
-  float a410 = 0;
-  float a435 = 0;
-  float a460 = 0;
+  float uv_cal = 0;
+  float ir_cal = 0;
   Sensor.disableIndicator();
   for(int i = 0; i < 10; i++){
-    pumpWater();
+    pumpWater(1);
     Sensor.enableBulb(AS7265x_LED_UV);
     Sensor.takeMeasurements();
     Sensor.disableBulb(AS7265x_LED_UV);
-    if(i != 0){
-    a410 = Sensor.getCalibratedA() + a410;
-    a435 = Sensor.getCalibratedB() + a435;
-    a460 = Sensor.getCalibratedC()+ a460;
-    delay(10000);
+    uv_cal = Sensor.getCalibratedA() + uv_cal;
+    Sensor.enableBulb(AS7265x_LED_IR);
+    Sensor.takeMeasurements();
+    Sensor.disableBulb(AS7265x_LED_IR);
+    ir_cal = Sensor.getCalibratedW() + ir_cal;
+    delay(1000);
     }
-  }
-  cal410 = a410 / 10;
-  cal435 = a435 / 10;
-  cal460 = a460 / 10;
+  
+  uv_cal = uv_cal / 10;
+  ir_cal = ir_cal / 10;
 
 
 
-  Serial.println("Calibration Done: Values are --> 410nm: ");
-  Serial.println(cal410);
-  Serial.println(" 435nm: ");
-  Serial.println(cal435);
-  Serial.print(" 460nm: ");
-  Serial.print(cal460);
-  Serial.print(" | ");
+  Serial.println("Calibration Done: Values are --> UV 410nm: ");
+  Serial.println(uv_cal);
+  Serial.println(" IR 860nm: ");
+  Serial.println(ir_cal);
+  Serial.println(" | ");
 }
+
 
 void setup() {
   pinMode(RELAY_PIN, OUTPUT);
-  pinMode(LED_READY, OUTPUT);
-  pinMode(LED_SENSE, OUTPUT);
+  //pinMode(LED_READY, OUTPUT);
+  //pinMode(LED_SENSE, OUTPUT);
   Serial.begin(115200);
   if (Sensor.begin() == false)  
   {
     Serial.println("Error Please Check Connection of Sensor");
     
   }
+  pumpWater(10);
   calibration();
 
 }
 
 void loop() {
-  float wave410, wave435, wave460;
-  pumpWater();
+  float wave410, wave860;
+  pumpWater(1);
   Sensor.enableBulb(AS7265x_LED_UV);
   Sensor.takeMeasurements();
   Sensor.disableBulb(AS7265x_LED_UV);
 
-  wave410 = Sensor.getCalibratedA();
-  wave435 = Sensor.getCalibratedB();
-  wave460 = Sensor.getCalibratedC();
+  wave410 = Sensor.getCalibratedA(); // 410nm
 
+  Sensor.enableBulb(AS7265x_LED_IR);
+  Sensor.takeMeasurements();
+  Sensor.disableBulb(AS7265x_LED_IR);
 
-  // Note that orginal constant values were obtained using 10 W 40 motor oil with a white background. Results may vary with different backgrounds.
-  if(wave410 < cal410 - 1400){
+  wave860 = Sensor.getCalibratedW(); //860nm
+
+ // Note that orginal constant values were obtained using 10 W 40 motor oil with a white background. Results may vary with different backgrounds.
+/*  if(wave410 < cal410 - 1400){
     Serial.println("Oil Detected with 410nm wavelength");
     digitalWrite(LED_SENSE,HIGH);
   }
@@ -96,15 +98,13 @@ void loop() {
     Serial.println("Oil Not Detected Yet");
     digitalWrite(LED_SENSE,LOW);
   }
-  /*
-  *for testing purposes
-  *Serial.print(wave410);
-  *Serial.print(" , ");
-  *Serial.print(wave435);
-  *Serial.print(" , ");
-  *Serial.print(wave460);
-  *Serial.print("| ");
-  */
+*/ 
+   Serial.print("UV 410nm: ");
+   Serial.print(wave410);
+   Serial.print(" IR 860nm: ");
+   Serial.print(wave860);
+   Serial.print("| ");
+  
   
 
   //Waits 10 Seconds before next reading. Need to Increase before use on craft
