@@ -53,8 +53,7 @@ void calibration(){
 
 void setup() {
   pinMode(RELAY_PIN, OUTPUT);
-  //pinMode(LED_READY, OUTPUT);
-  //pinMode(LED_SENSE, OUTPUT);
+  pinMode(LED_SENSE, OUTPUT);
   Serial.begin(115200);
   if (Sensor.begin() == false)  
   {
@@ -67,38 +66,36 @@ void setup() {
 }
 
 void loop() {
+  //This part takes in water and then takes a reading.
   float wave410, wave860;
-  pumpWater(1);
-  Sensor.enableBulb(AS7265x_LED_UV);
+  pumpWater(10);
+  Sensor.enableBulb(AS7265x_LED_UV); //UV LED
   Sensor.takeMeasurements();
   Sensor.disableBulb(AS7265x_LED_UV);
 
   wave410 = Sensor.getCalibratedA(); // 410nm
 
-  Sensor.enableBulb(AS7265x_LED_IR);
+  Sensor.enableBulb(AS7265x_LED_IR); //IR LED
   Sensor.takeMeasurements();
   Sensor.disableBulb(AS7265x_LED_IR);
 
   wave860 = Sensor.getCalibratedW(); //860nm
 
- // Note that orginal constant values were obtained using 10 W 40 motor oil with a white background. Results may vary with different backgrounds.
-/*  if(wave410 < cal410 - 1400){
-    Serial.println("Oil Detected with 410nm wavelength");
+// Logic Section of my Oil Sensing Code with Constants Obtained From a Black Sensing Box with Light Cut to a Minimum
+  if((wave860 > (ir_cal + 20))&& (wave860 < (ir_cal + 50)) ){ //For more information on how I got these constant values please check my speadsheet.
+    Serial.println("Oil Detected with the 860nm wavelength");
     digitalWrite(LED_SENSE,HIGH);
   }
-  else if(wave435 > cal435 + 100){
-    Serial.println("Oil Detected with 435nm wavelength");
-    digitalWrite(LED_SENSE,HIGH);
-  }
-  else if(wave460 < 150){
-    Serial.println("Oil Detected with 460nm Wavelength");
+  else if((wave410 < (uv_cal - 40)) && ((wave410 > (uv_cal - 50) ))){
+    Serial.println("Oil Detected with the 410nm wavelength");
     digitalWrite(LED_SENSE,HIGH);
   }
   else{
-    Serial.println("Oil Not Detected Yet");
+    Serial.println("Oil Not Detected Running Check Again...");
     digitalWrite(LED_SENSE,LOW);
   }
-*/ 
+    
+
    Serial.print("UV 410nm: ");
    Serial.print(wave410);
    Serial.print(" IR 860nm: ");
