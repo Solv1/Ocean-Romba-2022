@@ -9,6 +9,8 @@ Additonaly to pump water in and out of the sampling area.
 #define RELAY_PIN 7
 #define LED_READY 8
 #define LED_SENSE 9
+#define IR_RANGE 15
+#define UV_RANGE 150
 
 AS7265X Sensor;
 
@@ -16,16 +18,16 @@ float uv_cal, ir_cal; // UV Wavelength Value is 410nm, IR Wavelength Value is 86
 
 void pumpWater(int duration){
    digitalWrite(RELAY_PIN, HIGH);
-   delay(duration * 100);
+   delay(duration * 1000);
    digitalWrite(RELAY_PIN, LOW);
 }
 
 void calibration(){
   Serial.println("Calibration in progress please wait...");
-  float uv_cal = 0;
-  float ir_cal = 0;
+  uv_cal = 0;
+  ir_cal = 0;
   Sensor.disableIndicator();
-  for(int i = 0; i < 10; i++){
+  for(int i = 0; i < 5; i++){
     pumpWater(1);
     Sensor.enableBulb(AS7265x_LED_UV);
     Sensor.takeMeasurements();
@@ -38,8 +40,8 @@ void calibration(){
     delay(1000);
     }
   
-  uv_cal = uv_cal / 10;
-  ir_cal = ir_cal / 10;
+  uv_cal = uv_cal / 5;
+  ir_cal = ir_cal / 5;
 
 
 
@@ -47,7 +49,6 @@ void calibration(){
   Serial.println(uv_cal);
   Serial.println(" IR 860nm: ");
   Serial.println(ir_cal);
-  Serial.println(" | ");
 }
 
 
@@ -60,7 +61,7 @@ void setup() {
     Serial.println("Error Please Check Connection of Sensor");
     
   }
-  pumpWater(10);
+  pumpWater(5);
   calibration();
 
 }
@@ -68,7 +69,7 @@ void setup() {
 void loop() {
   //This part takes in water and then takes a reading.
   float wave410, wave860;
-  pumpWater(10);
+  pumpWater(5);
   Sensor.enableBulb(AS7265x_LED_UV); //UV LED
   Sensor.takeMeasurements();
   Sensor.disableBulb(AS7265x_LED_UV);
@@ -80,18 +81,23 @@ void loop() {
   Sensor.disableBulb(AS7265x_LED_IR);
 
   wave860 = Sensor.getCalibratedW(); //860nm
+  
 
 // Logic Section of my Oil Sensing Code with Constants Obtained From a Black Sensing Box with Light Cut to a Minimum
-  if((wave860 > (ir_cal + 20))&& (wave860 < (ir_cal + 50)) ){ //For more information on how I got these constant values please check my speadsheet.
-    Serial.println("Oil Detected with the 860nm wavelength");
+  if(wave860 > (ir_cal+IR_RANGE)) { //For more information on how I got these constant values please check my speadsheet.
+    Serial.println(ir_cal);
+    Serial.println(wave860);
+    Serial.println("\nOil Detected with the 860nm wavelength\n");
     digitalWrite(LED_SENSE,HIGH);
   }
-  else if((wave410 < (uv_cal - 40)) && ((wave410 > (uv_cal - 50) ))){
-    Serial.println("Oil Detected with the 410nm wavelength");
+  else if((wave410 > (uv_cal + UV_RANGE))){ // something gunky here
+    Serial.println(uv_cal);
+    Serial.println(wave410);
+    Serial.println("\nOil Detected with the 410nm wavelength\n");
     digitalWrite(LED_SENSE,HIGH);
   }
   else{
-    Serial.println("Oil Not Detected Running Check Again...");
+    Serial.println("\nOil Not Detected Running Check Again...\n");
     digitalWrite(LED_SENSE,LOW);
   }
     
