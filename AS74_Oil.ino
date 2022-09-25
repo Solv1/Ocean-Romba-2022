@@ -5,6 +5,8 @@ Purpose: To interface with the AS7265X Sensor and read wavelength intensty value
 Additonaly to pump water in and out of the sampling area.
 */
 #include "SparkFun_AS7265X.h"
+#include <SoftwareSerial.h>
+
 
 #define RELAY_PIN 7
 #define LED_READY 8
@@ -13,7 +15,10 @@ Additonaly to pump water in and out of the sampling area.
 #define UV_RANGE 150
 
 AS7265X Sensor;
+SoftwareSerial driverSerial(2,3);//RX Pin, TX Pin 
+// Can't use the normal RX and TX Pins because they are already used by the USB for Serial Monitor 
 
+boolean oilFlag = false;
 float uv_cal, ir_cal; // UV Wavelength Value is 410nm, IR Wavelength Value is 860nm
 
 void pumpWater(int duration){
@@ -56,6 +61,7 @@ void setup() {
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(LED_SENSE, OUTPUT);
   Serial.begin(115200);
+  driverSerial.begin(115200);
   if (Sensor.begin() == false)  
   {
     Serial.println("Error Please Check Connection of Sensor");
@@ -89,16 +95,22 @@ void loop() {
     Serial.println(wave860);
     Serial.println("\nOil Detected with the 860nm wavelength\n");
     digitalWrite(LED_SENSE,HIGH);
+    oilFlag = true;
+    driverSerial.write(oilFlag);
   }
-  else if((wave410 > (uv_cal + UV_RANGE))){ // something gunky here
+  else if((wave410 > (uv_cal + UV_RANGE))){ 
     Serial.println(uv_cal);
     Serial.println(wave410);
     Serial.println("\nOil Detected with the 410nm wavelength\n");
     digitalWrite(LED_SENSE,HIGH);
+    oilFlag = true;
+    driverSerial.write(oilFlag);
   }
   else{
     Serial.println("\nOil Not Detected Running Check Again...\n");
     digitalWrite(LED_SENSE,LOW);
+    oilFlag = false;
+    driverSerial.write(oilFlag);
   }
     
 

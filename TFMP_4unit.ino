@@ -4,6 +4,7 @@
 #include "printf.h"
 #include <Servo.h>    //Servo library
 #include <TFMPI2C.h>  // TFMini-Plus I2C Library v1.7.0
+#include <SoftwareSerial.h> //Serial Connection Libary 
 
 #define servoPin 11
 #define servoRight 30
@@ -13,6 +14,7 @@
 TFMPI2C tfmP1;        // Create a TFMini-Plus I2C object
 Servo servo;          //create servo obj
 Servo thruster;       //create thruster obj
+SoftwareSerial oilSerial(2,3); // RX, TX Using Pins other then 0 and 1 because of the USB Sieral connection present. 
 
 byte thrusterPin = 10;
 
@@ -22,9 +24,15 @@ int16_t tfDist2 = 0;  // Distance to object in centimeters
 int16_t tfDist3 = 0;  // Distance to object in centimeters
 int16_t tfDist4 = 0;  // Distance to object in centimeters
 char distStr[6];      // distance data string
+boolean oilFlag = false; // Passed Oil Flag from Oil Sensor
 
 unsigned long previousMillis = 0UL;
 const long interval = 5000UL;
+
+void oilSenseRoutine(){
+//Called when Oil Sense Flag is Set TRUE
+  
+}
   
 void commands( uint8_t addr)
 {
@@ -51,6 +59,7 @@ void commands( uint8_t addr)
 
 void setup()
 {
+    oilSerial.begin(115200); // Init OilSensor Serial Port
     Serial.begin(115200);   // Initialize terminal serial port
     printf_begin();          // Initialize printf library.
     delay(20);
@@ -89,6 +98,15 @@ void setup()
 
 void loop()
 {
+
+    if(oilSerial.available())
+    {
+      oilFlag = oilSerial.read();  
+    }
+    if(oilFlag)
+    {
+      oilSenseRoutine();    
+    }
     unsigned long currentMillis = millis();
     
     tfmP1.getData( tfDist1, 0x10);  // Get a frame of data (left lidar)
