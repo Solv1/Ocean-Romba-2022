@@ -3,18 +3,23 @@
 #include <Wire.h>     // Arduino standard I2C/Two-Wire Library
 #include "printf.h"
 #include <Servo.h>    //Servo library
-#include <TFMPI2C.h>  // TFMini-Plus I2C Library v1.7.0
-#include <SoftwareSerial.h> //Serial Connection Libary 
+#include <TFMPI2C.h>  // TFMini-Plus I2C Library v1.7.0 
 
-#define servoPin 11
-#define servoRight 30
-#define servoMid 87
+#define servoPin 11 //servo pin used for steering craft (180 deg)
+#define servoPin2 6 //servo pin used for belt system (180 deg)
+#define servoPin3 5 //servo pin used for belt system (360 deg)
+#define servoRight 30 //30
+#define servoMid 90 //87
 #define servoLeft 140
+#define SLAVE_ADDR 9
+#define ANSWERSIZE 1
 
 TFMPI2C tfmP1;        // Create a TFMini-Plus I2C object
-Servo servo;          //create servo obj
-Servo thruster;       //create thruster obj
-SoftwareSerial oilSerial(2,3); // RX, TX Using Pins other then 0 and 1 because of the USB Sieral connection present. 
+Servo servo;          //create servo obj for steering craft (180 deg)
+Servo servo2;          //create servo obj for belt system (180 deg)
+Servo servo3;          //create servo obj for belt system (360 deg)
+
+Servo thruster;       //create thruster obj 
 
 byte thrusterPin = 10;
 
@@ -28,11 +33,6 @@ boolean oilFlag = false; // Passed Oil Flag from Oil Sensor
 
 unsigned long previousMillis = 0UL;
 const long interval = 5000UL;
-
-void oilSenseRoutine(){
-//Called when Oil Sense Flag is Set TRUE
-  
-}
   
 void commands( uint8_t addr)
 {
@@ -57,13 +57,21 @@ void commands( uint8_t addr)
     delay(500);                    // wait for half a second.
 }
 
+void enable_belt()
+{
+	//Will add more code here once I'll know how the belt fits together.
+	//servo2.write();
+	//servo3.write();
+}
+
 void setup()
 {
-    oilSerial.begin(115200); // Init OilSensor Serial Port
     Serial.begin(115200);   // Initialize terminal serial port
     printf_begin();          // Initialize printf library.
     delay(20);
-    servo.attach(servoPin,544,2400); //we are using this pin for pwm
+    servo.attach(servoPin,544,2400);
+	  servo2.attach(servoPin2,544,2400);
+	  servo3.attach(servoPin3,544,2400);
     thruster.attach(thrusterPin);
     delay(500);
 
@@ -81,11 +89,10 @@ void setup()
     }
     else tfmP1.printReply();
 
-
     // Recover I2C Bus from any data hang.
     // This function includes `Wire.begin()`
     tfmP1.recoverI2CBus();
-//    Wire.begin();            // Initialize two-wire interface
+    //Wire.begin();            // Initialize two-wire interface
     Wire.setClock( 400000);  // Set I2C bus speed to 'Fast' if
                                // your Arduino supports 400KHz.
 
@@ -98,15 +105,6 @@ void setup()
 
 void loop()
 {
-
-    if(oilSerial.available())
-    {
-      oilFlag = oilSerial.read();  
-    }
-    if(oilFlag)
-    {
-      oilSenseRoutine();    
-    }
     unsigned long currentMillis = millis();
     
     tfmP1.getData( tfDist1, 0x10);  // Get a frame of data (left lidar)
@@ -116,46 +114,68 @@ void loop()
     tfmP1.getData( tfDist3, 0x18);  // Get a frame of data (right lidar)
     delay(30);
     tfmP1.getData( tfDist4, 0x1C);  // Get a frame of data (right front lidar)
-   
-  if ((tfDist2 <= 62 && tfDist4 <= 62 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 62 && tfDist4 <= 62 && tfDist3 != 0 && tfDist4 != 0) || (tfDist3 <= 62 && tfDist2 >= 62 && tfDist4 >= 62 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0) || (tfDist4 <= 62 && tfDist4 != 0))
-  {
-    servo.write(servoRight);
-    thruster.writeMicroseconds(1650);
-    if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+    
+    Wire.beginTransmission(SLAVE_ADDR);
+    Wire.write(0);
+    Wire.endTransmission();
+    Wire.requestFrom(SLAVE_ADDR,ANSWERSIZE);
+
+    if (Wire.available()) 
     {
-      previousMillis = currentMillis;
-      thruster.writeMicroseconds(1650);
+      oilFlag = Wire.read();
     }
-  }
-  else if ((tfDist1 <= 62 && tfDist2 <= 62 && tfDist1 != 0 && tfDist2 != 0) || (tfDist1 <= 62 && tfDist2 >= 62 && tfDist4 >= 62 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0 ) || (tfDist2 <= 62 && tfDist2 != 0)) 
-  {
-    servo.write(servoLeft);
-    thruster.writeMicroseconds(1650);
-    if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
-    {
-      previousMillis = currentMillis;
-      thruster.writeMicroseconds(1650);
+
+    if (!oilFlag) {
+      if ((tfDist2 <= 62 && tfDist4 <= 62 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 62 && tfDist4 <= 62 && tfDist3 != 0 && tfDist4 != 0) || (tfDist3 <= 62 && tfDist2 >= 62 && tfDist4 >= 62 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0) || (tfDist4 <= 62 && tfDist4 != 0))
+      {
+        servo.write(servoRight);
+        thruster.writeMicroseconds(1650);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1650);
+        }
+      }
+      else if ((tfDist1 <= 62 && tfDist2 <= 62 && tfDist1 != 0 && tfDist2 != 0) || (tfDist1 <= 62 && tfDist2 >= 62 && tfDist4 >= 62 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0 ) || (tfDist2 <= 62 && tfDist2 != 0)) 
+      {
+        servo.write(servoLeft);
+        thruster.writeMicroseconds(1650);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1650);
+        }
+      }
+      else
+      {
+        printf("Distance1: %d\n",tfDist1);
+        printf("Distance2: %d\n",tfDist2);
+        printf("Distance3: %d\n",tfDist3);
+        printf("Distance4: %d\n",tfDist4);
+        servo.write(servoMid);
+        thruster.writeMicroseconds(1650);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1650);
+        }
+      }
     }
-  }
-  else
-  {
-    printf("Distance1: %d\n",tfDist1);
-    printf("Distance2: %d\n",tfDist2);
-    printf("Distance3: %d\n",tfDist3);
-    printf("Distance4: %d\n",tfDist4);
-    servo.write(servoMid);
-    thruster.writeMicroseconds(1650);
-    if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
-    {
-      previousMillis = currentMillis;
-      thruster.writeMicroseconds(1650);
+    else {
+      thruster.writeMicroseconds(1500);
+      if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+      {
+        previousMillis = currentMillis;
+        thruster.writeMicroseconds(1500);
+      }
+      printf("calling enable_belt fnc\n");
+      //call enable_belt();
     }
-  }
 }
-  
+/*
   //SECTION COMMENTED OUT BELOW WAS FOR TESTING PURPOSES,
   //AND MAY STILL BE NEEDED FOR NOW.
-    /*
+    
     if (tfDist1 <= 31 && tfDist1 != 0) 
     {
       printf("0x10 (RIGHT FRONT SENSOR) is less than 31cm\n");
@@ -219,4 +239,4 @@ void loop()
       }
     }
 }
-    */
+*/
