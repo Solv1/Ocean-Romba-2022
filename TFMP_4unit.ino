@@ -1,35 +1,42 @@
 //Using I2C Addresses 0x10, 0x14, 0x18 and 0x1C
 
-#include <Wire.h>     // Arduino standard I2C/Two-Wire Library
+#include <Wire.h>         // Arduino standard I2C/Two-Wire Library
 #include "printf.h"
-#include <Servo.h>    //Servo library
-#include <TFMPI2C.h>  // TFMini-Plus I2C Library v1.7.0 
+#include <Servo.h>        //Servo library
+#include <TFMPI2C.h>      // TFMini-Plus I2C Library v1.7.0 
+#include "NewPing.h"      //library for USS
 
-#define servoPin 11 //servo pin used for steering craft (180 deg)
-#define servoPin2 6 //servo pin used for belt system (180 deg)
-#define servoPin3 5 //servo pin used for belt system (360 deg)
-#define servoRight 30 //30
-#define servoMid 90 //87
+#define TRIGGER_PIN 3     //pin used for usds
+#define ECHO_PIN 3        //pin used for usds
+#define MAX_DISTANCE 400  //max distance for usds
+
+#define servoPin 11       //servo pin used for steering craft (180 deg)
+#define servoPin2 6       //servo pin used for belt system (180 deg)
+#define servoPin3 5       //servo pin used for belt system (360 deg)
+#define servoRight 30     //30
+#define servoMid 90       //87
 #define servoLeft 140
 #define SLAVE_ADDR 9
 #define ANSWERSIZE 1
 
-TFMPI2C tfmP1;        // Create a TFMini-Plus I2C object
-Servo servo;          //create servo obj for steering craft (180 deg)
-Servo servo2;          //create servo obj for belt system (180 deg)
-Servo servo3;          //create servo obj for belt system (360 deg)
-
-Servo thruster;       //create thruster obj 
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); //create a sonar obj
+TFMPI2C tfmP1;            // Create a TFMini-Plus I2C object
+Servo servo;              //create servo obj for steering craft (180 deg)
+Servo servo2;             //create servo obj for belt system (180 deg)
+Servo servo3;             //create servo obj for belt system (360 deg)
+Servo thruster;           //create thruster obj 
 
 byte thrusterPin = 10;
+int duration = 0;
+int distance = 0;
 
 // Initialize data variables
-int16_t tfDist1 = 0;  // Distance to object in centimeters
-int16_t tfDist2 = 0;  // Distance to object in centimeters
-int16_t tfDist3 = 0;  // Distance to object in centimeters
-int16_t tfDist4 = 0;  // Distance to object in centimeters
-char distStr[6];      // distance data string
-boolean oilFlag = false; // Passed Oil Flag from Oil Sensor
+int16_t tfDist1 = 0;      // Distance to object in centimeters
+int16_t tfDist2 = 0;      // Distance to object in centimeters
+int16_t tfDist3 = 0;      // Distance to object in centimeters
+int16_t tfDist4 = 0;      // Distance to object in centimeters
+char distStr[6];          // distance data string
+boolean oilFlag = false;  // Passed Oil Flag from Oil Sensor
 
 unsigned long previousMillis = 0UL;
 const long interval = 5000UL;
@@ -57,11 +64,30 @@ void commands( uint8_t addr)
     delay(500);                    // wait for half a second.
 }
 
-void enable_belt()
+void enable_belt(int distance)
 {
-	//Will add more code here once I'll know how the belt fits together.
-	//servo2.write();
-	//servo3.write();
+  //Will add more code here once I'll know how the belt fits together.
+  if (distance <= 10) //10 cm
+  {
+    //turn off belt
+  }
+  else
+  {
+    if (Wire.available()) 
+    {
+      oilFlag = Wire.read();
+    }
+    while(oilFlag) {
+      //turn on belt
+      if (!oilFlag) 
+      {
+        //no more oil
+        break;
+      }
+      //servo2.write();
+      //servo3.write(); 
+    }
+  }
 }
 
 void setup()
@@ -70,8 +96,8 @@ void setup()
     printf_begin();          // Initialize printf library.
     delay(20);
     servo.attach(servoPin,544,2400);
-	  servo2.attach(servoPin2,544,2400);
-	  servo3.attach(servoPin3,544,2400);
+    servo2.attach(servoPin2,544,2400);
+    servo3.attach(servoPin3,544,2400);
     thruster.attach(thrusterPin);
     delay(500);
 
@@ -119,6 +145,10 @@ void loop()
     Wire.write(0);
     Wire.endTransmission();
     Wire.requestFrom(SLAVE_ADDR,ANSWERSIZE);
+
+    duration = sonar.ping();
+    delay(15);
+    distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
 
     if (Wire.available()) 
     {
@@ -169,7 +199,7 @@ void loop()
         thruster.writeMicroseconds(1500);
       }
       printf("calling enable_belt fnc\n");
-      //call enable_belt();
+      //call enable_belt(distance);
     }
 }
 /*
