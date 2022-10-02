@@ -5,9 +5,10 @@ Purpose: To interface with the AS7265X Sensor and read wavelength intensty value
 Additonaly to pump water in and out of the sampling area.
 */
 #include "SparkFun_AS7265X.h"
-#include <SoftwareSerial.h>
+#include <Wire.h> // I2C Wire Libary
 
 
+#define SLAVE_ADDR 9
 #define RELAY_PIN 7
 #define LED_READY 8
 #define LED_SENSE 9
@@ -15,10 +16,9 @@ Additonaly to pump water in and out of the sampling area.
 #define UV_RANGE 150
 
 AS7265X Sensor;
-SoftwareSerial driverSerial(2,3);//RX Pin, TX Pin 
-// Can't use the normal RX and TX Pins because they are already used by the USB for Serial Monitor 
 
 boolean oilFlag = false;
+byte oilFlagByte = 1;
 float uv_cal, ir_cal; // UV Wavelength Value is 410nm, IR Wavelength Value is 860nm
 
 void pumpWater(int duration){
@@ -56,25 +56,41 @@ void calibration(){
   Serial.println(ir_cal);
 }
 
+void receiveEvent(){
+  
+}
+void requestEvent(){
+
+  Wire.write(oilFlagByte);
+  Serial.println("Flag Request Event");
+
+  
+}
+
 
 void setup() {
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(LED_SENSE, OUTPUT);
+
+  
   Serial.begin(115200);
-  driverSerial.begin(115200);
+  Wire.begin(SLAVE_ADDR);
+  Wire.onRequest(requestEvent);
+  Wire.onReceive(receiveEvent);
   if (Sensor.begin() == false)  
   {
     Serial.println("Error Please Check Connection of Sensor");
     
   }
+  /*
   pumpWater(5);
   calibration();
-
+*/
 }
 
 void loop() {
   //This part takes in water and then takes a reading.
-  float wave410, wave860;
+  /*float wave410, wave860;
   pumpWater(5);
   Sensor.enableBulb(AS7265x_LED_UV); //UV LED
   Sensor.takeMeasurements();
@@ -119,11 +135,12 @@ void loop() {
    Serial.print(" IR 860nm: ");
    Serial.print(wave860);
    Serial.print("| ");
+*/
   
   
 
   //Waits 10 Seconds before next reading. Need to Increase before use on craft
-  delay(10000);
+  delay(100000);
 
  
 
