@@ -66,28 +66,23 @@ void commands( uint8_t addr)
 
 void enable_belt(int distance)
 {
-  //Will add more code here once I'll know how the belt fits together.
-  if (distance <= 10) //10 cm
-  {
-    //turn off belt
-  }
-  else
-  {
+	//servo2.write(160); //place down the belt (180 degree servo)
     if (Wire.available()) 
     {
       oilFlag = Wire.read();
     }
-    while(oilFlag) {
-      //turn on belt
-      if (!oilFlag) 
+    while(oilFlag) 
+	  {
+      servo3.write(100); //run the 360 degree servo
+      if ((!oilFlag) || (distance <= 10)) 
       {
-        //no more oil
+        //no more oil or tank is full so turn off belt and raise belt back up
+		    servo3.write(90); //stop the 360 degree servo
+		    //might have to add a delay here? Need to test to verify.
+		    //servo2.write(20); //pick up the belt (180 degree servo)
         break;
       }
-      //servo2.write();
-      //servo3.write(); 
     }
-  }
 }
 
 void setup()
