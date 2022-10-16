@@ -16,8 +16,6 @@ Additonaly to pump water in and out of the sampling area.
 #define UV_RANGE 150
 
 AS7265X Sensor;
-
-boolean oilFlag = false;
 byte oilFlagByte = 1;
 float uv_cal, ir_cal; // UV Wavelength Value is 410nm, IR Wavelength Value is 860nm
 
@@ -48,8 +46,6 @@ void calibration(){
   uv_cal = uv_cal / 5;
   ir_cal = ir_cal / 5;
 
-
-
   Serial.println("Calibration Done: Values are --> UV 410nm: ");
   Serial.println(uv_cal);
   Serial.println(" IR 860nm: ");
@@ -57,13 +53,14 @@ void calibration(){
 }
 
 void receiveEvent(){
-  
+  byte isReady = Wire.read();
+  if(isReady == 1 ){//indicates oil collection routine is done.
+    oilFlagByte = 0;//this starts the oil samplinging system again.
+  }
 }
 void requestEvent(){
-
   Wire.write(oilFlagByte);
   Serial.println("Flag Request Event");
-
   
 }
 
@@ -82,65 +79,61 @@ void setup() {
     Serial.println("Error Please Check Connection of Sensor");
     
   }
-  /*
+  
   pumpWater(5);
   calibration();
-*/
 }
 
 void loop() {
   //This part takes in water and then takes a reading.
-  /*float wave410, wave860;
-  pumpWater(5);
-  Sensor.enableBulb(AS7265x_LED_UV); //UV LED
-  Sensor.takeMeasurements();
-  Sensor.disableBulb(AS7265x_LED_UV);
+  float wave410, wave860;
+  while(oilFlagByte == 0){
+    pumpWater(5);
+    Sensor.enableBulb(AS7265x_LED_UV); //UV LED
+    Sensor.takeMeasurements();
+    Sensor.disableBulb(AS7265x_LED_UV);
 
-  wave410 = Sensor.getCalibratedA(); // 410nm
+    wave410 = Sensor.getCalibratedA(); // 410nm
 
-  Sensor.enableBulb(AS7265x_LED_IR); //IR LED
-  Sensor.takeMeasurements();
-  Sensor.disableBulb(AS7265x_LED_IR);
+    Sensor.enableBulb(AS7265x_LED_IR); //IR LED
+    Sensor.takeMeasurements();
+    Sensor.disableBulb(AS7265x_LED_IR);
 
-  wave860 = Sensor.getCalibratedW(); //860nm
-  
-
+    wave860 = Sensor.getCalibratedW(); //860nm
 // Logic Section of my Oil Sensing Code with Constants Obtained From a Black Sensing Box with Light Cut to a Minimum
-  if(wave860 > (ir_cal+IR_RANGE)) { //For more information on how I got these constant values please check my speadsheet.
-    Serial.println(ir_cal);
-    Serial.println(wave860);
-    Serial.println("\nOil Detected with the 860nm wavelength\n");
-    digitalWrite(LED_SENSE,HIGH);
-    oilFlag = true;
-    driverSerial.write(oilFlag);
+/*  if(wave860 > (ir_cal+IR_RANGE)) { //For more information on how I got these constant values please check my speadsheet.
+      Serial.println(ir_cal);
+      Serial.println(wave860);
+      Serial.println("\nOil Detected with the 860nm wavelength\n");
+      digitalWrite(LED_SENSE,HIGH);
+      oilFlagByte = 1;
   }
   else if((wave410 > (uv_cal + UV_RANGE))){ 
     Serial.println(uv_cal);
     Serial.println(wave410);
     Serial.println("\nOil Detected with the 410nm wavelength\n");
     digitalWrite(LED_SENSE,HIGH);
-    oilFlag = true;
-    driverSerial.write(oilFlag);
+    oilFlagByte = 1;
   }
   else{
     Serial.println("\nOil Not Detected Running Check Again...\n");
     digitalWrite(LED_SENSE,LOW);
-    oilFlag = false;
-    driverSerial.write(oilFlag);
+  }*/
+    Serial.print("UV 410nm: ");
+    Serial.print(wave410);
+    Serial.print(" IR 860nm: ");
+    Serial.print(wave860);
+    Serial.print("| ");
   }
-    
+  
 
-   Serial.print("UV 410nm: ");
-   Serial.print(wave410);
-   Serial.print(" IR 860nm: ");
-   Serial.print(wave860);
-   Serial.print("| ");
-*/
+
+
   
   
 
   //Waits 10 Seconds before next reading. Need to Increase before use on craft
-  delay(100000);
+  delay(10000);
 
  
 
