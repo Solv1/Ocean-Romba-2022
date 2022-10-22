@@ -13,9 +13,9 @@
 #define servoPin 11       //servo pin used for steering craft (180 deg)
 #define servoPin2 6       //servo pin used for belt system (180 deg)
 #define servoPin3 5       //servo pin used for belt system (360 deg)
-#define servoRight 30     //30
-#define servoMid 90       //87
-#define servoLeft 140
+#define servoRight 15     //30
+#define servoMid 90       //90
+#define servoLeft 180     //140
 #define SLAVE_ADDR 9
 #define ANSWERSIZE 1
 
@@ -66,20 +66,22 @@ void commands( uint8_t addr)
 
 void enable_belt(int distance)
 {
-	//servo2.write(160); //place down the belt (180 degree servo)
+  //servo2.write(160); //place down the belt (180 degree servo)
+  
     if (Wire.available()) 
     {
       oilFlag = Wire.read();
     }
     while(oilFlag) 
-	  {
+  {
       servo3.write(100); //run the 360 degree servo
       if ((!oilFlag) || (distance <= 10)) 
       {
-        //no more oil or tank is full so turn off belt and raise belt back up
-		    servo3.write(90); //stop the 360 degree servo
-		    //might have to add a delay here? Need to test to verify.
-		    //servo2.write(20); //pick up the belt (180 degree servo)
+        //no more oil or tank is full
+        //turn off belt and raise belt back up
+        servo3.write(90); //stop the 360 degree servo
+        //might have to add a delay here? Need to test to verify.
+        //servo2.write(20); //pick up the belt (180 degree servo)
         break;
       }
     }
@@ -135,15 +137,17 @@ void loop()
     tfmP1.getData( tfDist3, 0x18);  // Get a frame of data (right lidar)
     delay(30);
     tfmP1.getData( tfDist4, 0x1C);  // Get a frame of data (right front lidar)
+    delay(30);
+    //distance values will show 0 if distance is too far.
     
-    Wire.beginTransmission(SLAVE_ADDR);
-    Wire.write(0);
-    Wire.endTransmission();
-    Wire.requestFrom(SLAVE_ADDR,ANSWERSIZE);
+    //Wire.beginTransmission(SLAVE_ADDR);
+    //Wire.write(0);
+    //Wire.endTransmission();
+    //Wire.requestFrom(SLAVE_ADDR,ANSWERSIZE);
 
-    duration = sonar.ping();
-    delay(15);
-    distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
+    //duration = sonar.ping();
+    //delay(15);
+    //distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
 
     if (Wire.available()) 
     {
@@ -151,24 +155,26 @@ void loop()
     }
 
     if (!oilFlag) {
-      if ((tfDist2 <= 62 && tfDist4 <= 62 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 62 && tfDist4 <= 62 && tfDist3 != 0 && tfDist4 != 0) || (tfDist3 <= 62 && tfDist2 >= 62 && tfDist4 >= 62 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0) || (tfDist4 <= 62 && tfDist4 != 0))
+      if ((tfDist2 <= 120 && tfDist4 <= 120 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 30 && tfDist4 <= 120 && tfDist3 != 0 && tfDist4 != 0) || (tfDist3 <= 30 && tfDist2 >= 120 && tfDist4 >= 120 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0) || (tfDist4 <= 120 && tfDist4 != 0))
       {
+        printf("Turn Servo Right");
         servo.write(servoRight);
-        thruster.writeMicroseconds(1650);
+        thruster.writeMicroseconds(1300);
         if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
         {
           previousMillis = currentMillis;
-          thruster.writeMicroseconds(1650);
+          thruster.writeMicroseconds(1300);
         }
       }
-      else if ((tfDist1 <= 62 && tfDist2 <= 62 && tfDist1 != 0 && tfDist2 != 0) || (tfDist1 <= 62 && tfDist2 >= 62 && tfDist4 >= 62 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0 ) || (tfDist2 <= 62 && tfDist2 != 0)) 
+      else if ((tfDist1 <= 30 && tfDist2 <= 120 && tfDist1 != 0 && tfDist2 != 0) || (tfDist1 <= 30 && tfDist2 >= 120 && tfDist4 >= 120 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0 ) || (tfDist2 <= 120 && tfDist2 != 0)) 
       {
+        printf("Turn Servo Left");
         servo.write(servoLeft);
-        thruster.writeMicroseconds(1650);
+        thruster.writeMicroseconds(1300);
         if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
         {
           previousMillis = currentMillis;
-          thruster.writeMicroseconds(1650);
+          thruster.writeMicroseconds(1300);
         }
       }
       else
@@ -178,11 +184,11 @@ void loop()
         printf("Distance3: %d\n",tfDist3);
         printf("Distance4: %d\n",tfDist4);
         servo.write(servoMid);
-        thruster.writeMicroseconds(1650);
+        thruster.writeMicroseconds(1400);
         if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
         {
           previousMillis = currentMillis;
-          thruster.writeMicroseconds(1650);
+          thruster.writeMicroseconds(1400);
         }
       }
     }
