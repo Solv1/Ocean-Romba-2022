@@ -29,8 +29,8 @@
   /* Print Bluefruit information*/ 
   this->info();
 
-  Serial.println("Please use Adafruit Bluefruit LE app to connect in UART mode");
-  Serial.println("Then Enter Commands to send to Bluefruit");
+  Serial.println("Please use Connect using the Bluetooth App");
+  Serial.println("Enter Commands to send to Bluefruit");
   Serial.println();
 
   this->verbose(false);  // debug info is a little annoying after this point!
@@ -44,13 +44,13 @@
   if ( this->isVersionAtLeast(MIN_FIRM) )
   {
     // Change Mode LED Activity
-    Serial.println(("******************************"));
-    Serial.println(("Change LED activity to " MODE_LED_SET));
+    //Serial.println(("******************************"));
+   // Serial.println(("Change LED activity to " MODE_LED_SET));
     this->sendCommandCheckOK("AT+HWModeLED=" MODE_LED_SET);
-    Serial.println(("******************************"));
+    //Serial.println(("******************************"));
   }
 }
-bool BlueTooth::getUserInput(char buffer[], uint8_t maxSize){// Additonaly this code was not written by me.
+/*bool BlueTooth::getUserInput(char buffer[], uint8_t maxSize){// Additonaly this code was not written by me.
     // timeout in 100 milliseconds
   TimeoutTimer timeout(100);
 
@@ -68,51 +68,33 @@ bool BlueTooth::getUserInput(char buffer[], uint8_t maxSize){// Additonaly this 
   } while( (count < maxSize) && (Serial.available()) );
 
   return true;
-}
+}*/
 void BlueTooth::cmdCheck(OilSense* sensor_to_check){
-  MatchState ms;
-  if ( getUserInput(input, BUFSIZE) )
-  {
-    // Send characters to Bluefruit
-    Serial.print("[Send] ");
-    Serial.println(input);
-
-    this->print("AT+BLEUARTTX=");
-    this->println(input);
-
-    // check response stastus
-    if (! this->waitForOK() ) {
-      Serial.println(F("Failed to send?"));
-    }
-  }
-
+  MatchState ms; // Reg Exp Object
   // Check for incoming characters from Bluefruit
-  this->println("AT+BLEUARTRX");
+  this->println("Waiting for Commands...");
   this->readline();
-  if (strcmp(this->buffer, "OK") == 0) {
+  if (strlen(this->buffer) == 0) {
     // no data
     return;
   }
+  Serial.println(this->buffer);
   // Some data was found, its in the buffer
   Serial.print(("[Recv] ")); Serial.println(this->buffer);
   ms.Target(this->buffer);
-  char result = ms.Match("^oil$",0); // Regular Expression for oil command
-  if(result == REGEXP_MATCHED){
+  if(ms.Match("^oil$",0) == REGEXP_MATCHED){
     this->print("Current UV Reading: ");
     this->println(sensor_to_check->getUV());
     this->print("Current IR Reading: ");
     this->println(sensor_to_check->getIR());
-    result = 0;
   }
-  else{
-    result = ms.Match("^gps%",0);
-  }
-  if(result == REGEXP_MATCHED){
-    //get GPS data - TODO
-  }
-  else if(result == REGEXP_NOMATCH){
-    this->print("Invalid Command, try again");
+  else if(ms.Match("^gps$",0) == REGEXP_MATCHED){
+    this->println("GPS DATA");
+    
   }  
+  else{
+    
+  }
   this->waitForOK();
   
 }

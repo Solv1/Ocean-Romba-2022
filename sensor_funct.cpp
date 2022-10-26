@@ -37,7 +37,7 @@ void OilSense::calibration(){//--> Calibrates sensor and sets values intial comp
   }
   else{
   OilSense::pumpWater(5);
-  Serial2.println("Calibration in progress please wait...");
+  Serial.println("Calibration in progress please wait...");
   Sensor.disableIndicator();
   for(int i = 0; i < 5; i++){
     OilSense::pumpWater(1);
