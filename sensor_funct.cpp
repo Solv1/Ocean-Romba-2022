@@ -31,9 +31,9 @@ void OilSense::pumpWater(int duration)//--> Pump water w. pump at pump_pin
    digitalWrite(pump_pin, LOW);
 
 }
-void OilSense::calibration(){//--> Calibrates sensor and sets values intial compariator values based on clean water
+bool OilSense::calibration(){//--> Calibrates sensor and sets values intial compariator values based on clean water
   if(Sensor.begin() == false){
-    Serial.println("Check Sensor Wiring"); // Intializes AS7265X Sensor
+    return false; // Intializes AS7265X Sensor
   }
   else{
   OilSense::pumpWater(5);
@@ -59,7 +59,9 @@ void OilSense::calibration(){//--> Calibrates sensor and sets values intial comp
   Serial.println(uv_cal);
   Serial.println(" IR 860nm: ");
   Serial.println(ir_cal);
+  return true;
   }
+  return true;
 }
 int OilSense::oilCheck()//-->Checks for Oil based on Calibration values and Defined Ranges
 {

@@ -1,3 +1,5 @@
+
+
 #ifndef sensor_funct.h
 #define sensor_funct.h
 #include "Arduino.h"
@@ -11,7 +13,7 @@ class OilSense
     OilSense(float ir, float uv, int pump_pin);
     void pumpWater(int duration);
     int oilCheck();
-    void calibration();
+    bool calibration();
     float getIR();
     float getUV();
     AS7265X Sensor; 

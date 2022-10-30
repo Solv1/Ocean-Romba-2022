@@ -1,15 +1,11 @@
 #include "bluetooth_funct.h"
-
- void BlueTooth::setup(){ // The BLE Setup Code was not fully written by me uses Adafruit UART Bluetooth.
-  
-  
-
+bool BlueTooth::setup(){ // The BLE Setup Code was not fully written by me uses Adafruit UART Bluetooth.
   /* Initialise the module*/ 
   Serial.print(F("Initialising the Bluefruit LE module: "));
 
   if ( !(this->begin(VERBOSE_MODE) ))
   {
-    Serial.println("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?");
+    return false;
   }
   Serial.println( ("OK!") );
 
@@ -44,32 +40,13 @@
   if ( this->isVersionAtLeast(MIN_FIRM) )
   {
     // Change Mode LED Activity
-    //Serial.println(("******************************"));
-   // Serial.println(("Change LED activity to " MODE_LED_SET));
     this->sendCommandCheckOK("AT+HWModeLED=" MODE_LED_SET);
-    //Serial.println(("******************************"));
   }
-}
-/*bool BlueTooth::getUserInput(char buffer[], uint8_t maxSize){// Additonaly this code was not written by me.
-    // timeout in 100 milliseconds
-  TimeoutTimer timeout(100);
-
-  memset(buffer, 0, maxSize);
-  while( (!Serial.available()) && !timeout.expired() ) { delay(1); }
-
-  if ( timeout.expired() ) return false;
-
-  delay(2);
-  uint8_t count=0;
-  do
-  {
-    count += Serial.readBytes(buffer+count, maxSize);
-    delay(2);
-  } while( (count < maxSize) && (Serial.available()) );
-
   return true;
-}*/
-void BlueTooth::cmdCheck(OilSense* sensor_to_check){
+}
+
+
+void BlueTooth::cmdCheck(OilSense* sensor_to_check,TinyGPSPlus* gps ){ 
   MatchState ms; // Reg Exp Object
   // Check for incoming characters from Bluefruit
   this->println("Waiting for Commands...");
@@ -89,7 +66,18 @@ void BlueTooth::cmdCheck(OilSense* sensor_to_check){
     this->println(sensor_to_check->getIR());
   }
   else if(ms.Match("^gps$",0) == REGEXP_MATCHED){
-    this->println("GPS DATA");
+
+    this->print(F("Location: ")); 
+    if (gps->location.isValid())
+    {
+      this->print(gps->location.lat(), 6);
+      this->print(F(","));
+      this->print(gps->location.lng(), 6);
+   }
+    else
+    {
+      this->print(F("INVALID"));
+    }
     
   }  
   else{
@@ -97,4 +85,7 @@ void BlueTooth::cmdCheck(OilSense* sensor_to_check){
   }
   this->waitForOK();
   
+}
+void BlueTooth::blueToothSend(char* s){
+  this->println(s);
 }
