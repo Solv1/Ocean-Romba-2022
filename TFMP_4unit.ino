@@ -11,10 +11,12 @@
 #define MAX_DISTANCE 400  //max distance for usds
 
 #define servoPin 11       //servo pin used for steering craft (180 deg)
-#define servoPin2 6       //servo pin used for belt system (180 deg)
-#define servoPin3 5       //servo pin used for belt system (360 deg)
+#define servoPin2 6       //servo pin used for belt system (360 deg)
+#define servoPin3 5       //servo pin used for lift system (360 deg)
 #define servoRight 15     //30
 #define servoMid 90       //90
+#define servoMidd2 135
+#define servoRMidd2 45
 #define servoLeft 180     //140
 #define SLAVE_ADDR 9
 #define ANSWERSIZE 1
@@ -22,8 +24,8 @@
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); //create a sonar obj
 TFMPI2C tfmP1;            // Create a TFMini-Plus I2C object
 Servo servo;              //create servo obj for steering craft (180 deg)
-Servo servo2;             //create servo obj for belt system (180 deg)
-Servo servo3;             //create servo obj for belt system (360 deg)
+Servo beltServo;             //create servo obj for belt system (360 deg)
+Servo liftServo;             //create servo obj for belt system (360 deg)
 Servo thruster;           //create thruster obj 
 
 byte thrusterPin = 10;
@@ -65,26 +67,37 @@ void commands( uint8_t addr)
 }
 
 void enable_belt(int distance)
-{
-  //servo2.write(160); //place down the belt (180 degree servo)
-  
+{ 
+    Serial.print("Running the lift Servo!\n");
+    liftServo.write(20); //run the lift servo
+    delay(10000);
+    Serial.print("Stopping the lift Servo!\n");
+    liftServo.write(90); //stop the lift servo
+    Serial.print("Running the belt Servo!\n");
+    beltServo.write(1); //run the belt servo
+    delay(60000);
+    Serial.print("Stopping the belt Servo!\n");
+    beltServo.write(90); //stop the belt servo
+    Serial.print("Lifting back the lift Servo!\n");
+    liftServo.write(160); //lift back up the belt system
+    delay(11000);
+    Serial.print("Stopping the lift Servo!\n");
+    liftServo.write(90); //stop the lift servo
+    /*
     if (Wire.available()) 
     {
       oilFlag = Wire.read();
     }
-    while(oilFlag) 
-  {
-      servo3.write(100); //run the 360 degree servo
-      if ((!oilFlag) || (distance <= 10)) 
-      {
-        //no more oil or tank is full
-        //turn off belt and raise belt back up
-        servo3.write(90); //stop the 360 degree servo
-        //might have to add a delay here? Need to test to verify.
-        //servo2.write(20); //pick up the belt (180 degree servo)
-        break;
-      }
+    if ((!oilFlag) || (distance <= 10)) 
+    {
+      //no more oil or tank is full
+      //turn off belt and raise belt back up
+      servo3.write(90); //stop the 360 degree servo
+      //might have to add a delay here? Need to test to verify.
+      //servo2.write(20); //pick up the belt (180 degree servo)
+      break;
     }
+    */
 }
 
 void setup()
@@ -93,8 +106,8 @@ void setup()
     printf_begin();          // Initialize printf library.
     delay(20);
     servo.attach(servoPin,544,2400);
-    servo2.attach(servoPin2,544,2400);
-    servo3.attach(servoPin3,544,2400);
+    beltServo.attach(servoPin2);
+    liftServo.attach(servoPin3);
     thruster.attach(thrusterPin);
     delay(500);
 
@@ -155,26 +168,70 @@ void loop()
     }
 
     if (!oilFlag) {
-      if ((tfDist2 <= 120 && tfDist4 <= 120 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 30 && tfDist4 <= 120 && tfDist3 != 0 && tfDist4 != 0) || (tfDist3 <= 30 && tfDist2 >= 120 && tfDist4 >= 120 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0) || (tfDist4 <= 120 && tfDist4 != 0))
+      if ((tfDist4 <= 120 && tfDist2 > tfDist4 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 20 && tfDist4 <= 120 && tfDist3 != 0 && tfDist4 != 0))
       {
         printf("Turn Servo Right");
         servo.write(servoRight);
-        thruster.writeMicroseconds(1300);
+        thruster.writeMicroseconds(1305);
         if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
         {
           previousMillis = currentMillis;
-          thruster.writeMicroseconds(1300);
+          thruster.writeMicroseconds(1305);
         }
       }
-      else if ((tfDist1 <= 30 && tfDist2 <= 120 && tfDist1 != 0 && tfDist2 != 0) || (tfDist1 <= 30 && tfDist2 >= 120 && tfDist4 >= 120 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0 ) || (tfDist2 <= 120 && tfDist2 != 0)) 
+      else if ((tfDist2 <= 120 && tfDist2 < tfDist4 && tfDist2 != 0 && tfDist4 != 0)||(tfDist1 <= 20 && tfDist2 <= 120 && tfDist1 != 0 && tfDist2 != 0)) 
       {
         printf("Turn Servo Left");
         servo.write(servoLeft);
-        thruster.writeMicroseconds(1300);
+        thruster.writeMicroseconds(1305);
         if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
         {
           previousMillis = currentMillis;
-          thruster.writeMicroseconds(1300);
+          thruster.writeMicroseconds(1305);
+        }
+      }
+      else if (tfDist1 <= 90 && tfDist2 <= 120 && tfDist4 <= 120 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0)
+      {
+        printf("Turn Servo Left");
+        servo.write(servoLeft);
+        thruster.writeMicroseconds(1305);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1305);
+        }
+      }
+      else if (tfDist3 <= 90 && tfDist2 <= 120 && tfDist4 <= 120 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0)
+      {
+        printf("Turn Servo Right");
+        servo.write(servoRight);
+        thruster.writeMicroseconds(1305);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1305);
+        }
+      }
+      else if (tfDist1 <= 20 && tfDist2 >= 120 && tfDist4 >= 120 && tfDist1 != 0 && tfDist2 != 0 && tfDist4 != 0)
+      {
+        printf("Turn Servo A Bit Left");
+        servo.write(servoMidd2);                      //turns servo a bit left.
+        thruster.writeMicroseconds(1305);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1305);
+        }
+      }
+      else if (tfDist3 <= 20 && tfDist2 >= 120 && tfDist4 >= 120 && tfDist3 != 0 && tfDist2 != 0 && tfDist4 != 0)
+      {
+        printf("Turn Servo A Bit Right");
+        servo.write(servoRMidd2);                     //turns servo a bit right.
+        thruster.writeMicroseconds(1305);
+        if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+          thruster.writeMicroseconds(1305);
         }
       }
       else
