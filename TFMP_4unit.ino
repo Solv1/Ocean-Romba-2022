@@ -38,11 +38,11 @@ int16_t tfDist2 = 0;      // Distance to object in centimeters
 int16_t tfDist3 = 0;      // Distance to object in centimeters
 int16_t tfDist4 = 0;      // Distance to object in centimeters
 char distStr[6];          // distance data string
-boolean oilFlag = false;  // Passed Oil Flag from Oil Sensor
+byte oilFlag = 0;  // Passed Oil Flag from Oil Sensor
 
 unsigned long previousMillis = 0UL;
 const long interval = 5000UL;
-  
+
 void commands( uint8_t addr)
 {
     printf("Set up device at address 0x%2x\r\n", addr);
@@ -65,40 +65,7 @@ void commands( uint8_t addr)
     else tfmP1.printReply();
     delay(500);                    // wait for half a second.
 }
-
-void enable_belt(int distance)
-{ 
-    Serial.print("Running the lift Servo!\n");
-    liftServo.write(20); //run the lift servo
-    delay(10000);
-    Serial.print("Stopping the lift Servo!\n");
-    liftServo.write(90); //stop the lift servo
-    Serial.print("Running the belt Servo!\n");
-    beltServo.write(1); //run the belt servo
-    delay(60000);
-    Serial.print("Stopping the belt Servo!\n");
-    beltServo.write(90); //stop the belt servo
-    Serial.print("Lifting back the lift Servo!\n");
-    liftServo.write(160); //lift back up the belt system
-    delay(11000);
-    Serial.print("Stopping the lift Servo!\n");
-    liftServo.write(90); //stop the lift servo
-    /*
-    if (Wire.available()) 
-    {
-      oilFlag = Wire.read();
-    }
-    if ((!oilFlag) || (distance <= 10)) 
-    {
-      //no more oil or tank is full
-      //turn off belt and raise belt back up
-      servo3.write(90); //stop the 360 degree servo
-      //might have to add a delay here? Need to test to verify.
-      //servo2.write(20); //pick up the belt (180 degree servo)
-      break;
-    }
-    */
-}
+//int distance
 
 void setup()
 {
@@ -109,7 +76,8 @@ void setup()
     beltServo.attach(servoPin2);
     liftServo.attach(servoPin3);
     thruster.attach(thrusterPin);
-    delay(500);
+    //delay(500);
+    //delay(10000);
 
     if (tfmP1.sendCommand( SET_I2C_MODE,0))
     {
@@ -142,7 +110,6 @@ void setup()
 void loop()
 {
     unsigned long currentMillis = millis();
-    
     tfmP1.getData( tfDist1, 0x10);  // Get a frame of data (left lidar)
     delay(30);
     tfmP1.getData( tfDist2, 0x14);  // Get a frame of data (left front lidar)
@@ -152,6 +119,15 @@ void loop()
     tfmP1.getData( tfDist4, 0x1C);  // Get a frame of data (right front lidar)
     delay(30);
     //distance values will show 0 if distance is too far.
+
+    /*
+    Serial.print("Lifting back the lift Servo!\n");
+    liftServo.write(160); //lift back up the belt system
+    delay(7000);
+    Serial.print("Stopping the lift Servo!\n");
+    liftServo.write(90); //stop the lift servo
+    delay(10000);
+    */
     
     //Wire.beginTransmission(SLAVE_ADDR);
     //Wire.write(0);
@@ -161,13 +137,49 @@ void loop()
     //duration = sonar.ping();
     //delay(15);
     //distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
-
+    Wire.requestFrom(9,1);
     if (Wire.available()) 
     {
       oilFlag = Wire.read();
+      Serial.print(oilFlag);
+    }
+    if (oilFlag)
+    {
+      Serial.print("Running the lift Servo!\n");
+      liftServo.write(20); //run the lift servo
+      delay(7000);
+      Serial.print("Stopping the lift Servo!\n");
+      liftServo.write(90); //stop the lift servo
+      //delay(5000);
+      while(oilFlag)
+      {
+        Serial.print("Running the belt Servo!\n");
+        beltServo.write(80); //run the belt servo
+        delay(5000);
+        Wire.requestFrom(9,1);
+        if (Wire.available()) 
+        {
+          oilFlag = Wire.read();
+        }
+        if (oilFlag == 0)
+        {
+          break;
+        }
+      }
+      Serial.print("Stopping the belt Servo!\n");
+      beltServo.write(90); //stop the belt servo
+      Serial.print("Lifting back the lift Servo!\n");
+      liftServo.write(160); //lift back up the belt system
+      delay(7000);
+      Serial.print("Stopping the lift Servo!\n");
+      liftServo.write(90); //stop the lift servo
+      delay(1000);
     }
 
-    if (!oilFlag) {
+    
+    /*
+    if (!oilFlag) 
+    {
       if ((tfDist4 <= 120 && tfDist2 > tfDist4 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 20 && tfDist4 <= 120 && tfDist3 != 0 && tfDist4 != 0))
       {
         printf("Turn Servo Right");
@@ -249,7 +261,8 @@ void loop()
         }
       }
     }
-    else {
+    else 
+    {
       thruster.writeMicroseconds(1500);
       if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
       {
@@ -259,6 +272,7 @@ void loop()
       printf("calling enable_belt fnc\n");
       //call enable_belt(distance);
     }
+    */
 }
 /*
   //SECTION COMMENTED OUT BELOW WAS FOR TESTING PURPOSES,
