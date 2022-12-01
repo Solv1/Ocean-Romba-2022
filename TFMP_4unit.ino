@@ -183,10 +183,6 @@ void loop()
       liftServo.write(90); //stop the lift servo
       while(oilFlag)
       {
-        Serial.print("Running the belt Servo!\n");
-        Level = analogRead(A0);  // read the input pin
-        beltServo.write(110); //run the belt servo
-        delay(1000);
         Wire.requestFrom(9,1);
         if (Wire.available()) 
         {
@@ -196,6 +192,10 @@ void loop()
         {
           break;
         }
+        Serial.print("Running the belt Servo!\n");
+        Level = analogRead(A0);  // read the input pin
+        beltServo.write(110); //run the belt servo
+        //delay(1000);
       }
       Serial.print("Stopping the belt Servo!\n");
       beltServo.write(90); //stop the belt servo
