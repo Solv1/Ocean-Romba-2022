@@ -169,6 +169,7 @@ void loop()
         while(Level <= 10)
         {
           Serial.println("Current Oil Level Value:%d\n",Level);          // debug value
+          Level = analogRead(A0);  // read the input pin
           if(Level >= 100)
           {
             break;
