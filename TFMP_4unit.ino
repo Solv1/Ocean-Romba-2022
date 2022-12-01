@@ -156,17 +156,6 @@ void loop()
     //delay(15);
     //distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
     Level = analogRead(A0);  // read the input pin
-    if (Level <= 10)
-    {
-      while(Level <= 10)
-      {
-        Serial.println("Current Oil Level Value:%d\n",Level);          // debug value
-        if(Level >= 100)
-        {
-          break;
-        }
-      }
-    }
     Wire.requestFrom(9,1);
     if (Wire.available()) 
     {
@@ -175,6 +164,17 @@ void loop()
     }
     if (oilFlag)
     {
+      if (Level <= 10)
+      {
+        while(Level <= 10)
+        {
+          Serial.println("Current Oil Level Value:%d\n",Level);          // debug value
+          if(Level >= 100)
+          {
+            break;
+          }
+        }
+      }
       Serial.print("Running the lift Servo!\n");
       liftServo.write(20); //run the lift servo
       delay(7000);
@@ -190,7 +190,7 @@ void loop()
         {
           oilFlag = Wire.read();
         }
-        if (oilFlag == 0)
+        if (oilFlag == 0 || Level <= 10)
         {
           break;
         }
