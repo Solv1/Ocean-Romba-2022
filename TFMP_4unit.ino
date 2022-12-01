@@ -184,6 +184,7 @@ void loop()
       while(oilFlag)
       {
         Serial.print("Running the belt Servo!\n");
+        Level = analogRead(A0);  // read the input pin
         beltServo.write(110); //run the belt servo
         delay(1000);
         Wire.requestFrom(9,1);
