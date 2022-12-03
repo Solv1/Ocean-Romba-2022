@@ -45,6 +45,8 @@ byte oilFlag = 0;  // Passed Oil Flag from Oil Sensor
 
 unsigned long previousMillis = 0UL;
 const long interval = 5000UL;
+unsigned long previousMillis2 = 0UL;
+const long interval2 = 10000UL;
 
 void commands( uint8_t addr)
 {
@@ -111,6 +113,7 @@ void setup()
 void loop()
 {
     unsigned long currentMillis = millis();
+    unsigned long currentMillis2 = millis();
     tfmP1.getData( tfDist1, 0x10);  // Get a frame of data (left lidar)
     delay(30);
     tfmP1.getData( tfDist2, 0x14);  // Get a frame of data (left front lidar)
@@ -156,7 +159,11 @@ void loop()
     //delay(15);
     //distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
     Level = analogRead(A0);  // read the input pin
-    Wire.requestFrom(9,1);
+    if(currentMillis2 - previousMillis2 > interval2) //wait delay (is interruptable)
+    {
+      previousMillis2 = currentMillis2;
+      Wire.requestFrom(9,1);
+    }
     if (Wire.available()) 
     {
       oilFlag = Wire.read();
@@ -164,11 +171,17 @@ void loop()
     }
     if (oilFlag)
     {
+      thruster.writeMicroseconds(1500);
+      if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+      {
+        previousMillis = currentMillis;
+        thruster.writeMicroseconds(1500);
+      }
       if (Level <= 10)
       {
         while(Level <= 10)
         {
-          Serial.println("Current Oil Level Value:%d\n",Level);          // debug value
+          printf("Current Oil Level Value:%d\n",Level);          // debug value
           Level = analogRead(A0);  // read the input pin
           if(Level >= 100)
           {
@@ -195,7 +208,11 @@ void loop()
         Serial.print("Running the belt Servo!\n");
         Level = analogRead(A0);  // read the input pin
         beltServo.write(110); //run the belt servo
-        //delay(1000);
+        delay(60000);
+        /*if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+        {
+          previousMillis = currentMillis;
+        }*/
       }
       Serial.print("Stopping the belt Servo!\n");
       beltServo.write(90); //stop the belt servo
