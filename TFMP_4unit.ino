@@ -123,15 +123,6 @@ void loop()
     tfmP1.getData( tfDist4, 0x1C);  // Get a frame of data (right front lidar)
     delay(30);
     //distance values will show 0 if distance is too far.
-
-    /*
-    Serial.print("Lifting back the lift Servo!\n");
-    liftServo.write(160); //lift back up the belt system
-    delay(500);
-    Serial.print("Stopping the lift Servo!\n");
-    liftServo.write(90); //stop the lift servo
-    delay(10000);
-    */
     /*
     Serial.print("Lowering the belt system!\n");
     liftServo.write(20); //run the lift servo
@@ -149,7 +140,6 @@ void loop()
     liftServo.write(90); //stop the lift servo
     delay(2000);
     */
-    
     //Wire.beginTransmission(SLAVE_ADDR);
     //Wire.write(0);
     //Wire.endTransmission();
@@ -159,6 +149,7 @@ void loop()
     //delay(15);
     //distance = round((duration / 2) * 0.0343); //get distance measurement for level-sensor
     Level = analogRead(A0);  // read the input pin
+    printf("Top Oil Level Value:%d\n",Level);
     if(currentMillis2 - previousMillis2 > interval2) //wait delay (is interruptable)
     {
       previousMillis2 = currentMillis2;
@@ -169,61 +160,53 @@ void loop()
       oilFlag = Wire.read();
       Serial.print(oilFlag);
     }
-    if (oilFlag)
-    {
-      thruster.writeMicroseconds(1500);
-      if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
+      if (oilFlag)
       {
-        previousMillis = currentMillis;
         thruster.writeMicroseconds(1500);
-      }
-      if (Level <= 10)
-      {
-        while(Level <= 10)
+        Serial.print("IN HERE 1\n");
+        Serial.print("Running the lift Servo!\n");
+        liftServo.write(20); //run the lift servo
+        delay(7000);
+        Serial.print("Stopping the lift Servo!\n");
+        liftServo.write(90); //stop the lift servo
+        while(oilFlag && Level > 100)
         {
-          printf("Current Oil Level Value:%d\n",Level);          // debug value
-          Level = analogRead(A0);  // read the input pin
-          if(Level >= 100)
+          if(currentMillis2 - previousMillis2 > interval2) //wait delay (is interruptable)
           {
+            previousMillis2 = currentMillis2;
+            Wire.requestFrom(9,1);
+          }
+          if (Wire.available()) 
+          {
+            oilFlag = Wire.read();
+          }
+          printf("Oil Level Value:%d\n",Level);  
+          Serial.print("Running the belt Servo!\n");
+          Level = analogRead(A0);  // read the input pin
+          beltServo.write(110); //run the belt servo
+          currentMillis2 = millis();
+        }
+        Serial.print("Stopping the belt Servo!\n");
+        beltServo.write(90); //stop the belt servo
+        Serial.print("Lifting back the lift Servo!\n");
+        liftServo.write(160); //lift back up the belt system
+        delay(7250);
+        Serial.print("Stopping the lift Servo!\n");
+        liftServo.write(90); //stop the lift servo
+        while(Level < 50)
+        {
+          Serial.print("CHANGE OIL TANK!\n");
+          Level = analogRead(A0);  // read the input pin
+          if(Level > 100)
+          {
+            Serial.print("GETTING OUT OF WHILE!\n");
             break;
           }
         }
+        //delay(2000);
       }
-      Serial.print("Running the lift Servo!\n");
-      liftServo.write(20); //run the lift servo
-      delay(7000);
-      Serial.print("Stopping the lift Servo!\n");
-      liftServo.write(90); //stop the lift servo
-      while(oilFlag)
-      {
-        Wire.requestFrom(9,1);
-        if (Wire.available()) 
-        {
-          oilFlag = Wire.read();
-        }
-        if (oilFlag == 0 || Level <= 10)
-        {
-          break;
-        }
-        Serial.print("Running the belt Servo!\n");
-        Level = analogRead(A0);  // read the input pin
-        beltServo.write(110); //run the belt servo
-        delay(60000);
-        /*if(currentMillis - previousMillis > interval) //wait delay (is interruptable)
-        {
-          previousMillis = currentMillis;
-        }*/
-      }
-      Serial.print("Stopping the belt Servo!\n");
-      beltServo.write(90); //stop the belt servo
-      Serial.print("Lifting back the lift Servo!\n");
-      liftServo.write(160); //lift back up the belt system
-      delay(7250);
-      Serial.print("Stopping the lift Servo!\n");
-      liftServo.write(90); //stop the lift servo
-      //delay(2000);
-    }
-    if (!oilFlag) {
+    if (!oilFlag && Level > 100) 
+    {
       if ((tfDist4 <= 120 && tfDist2 > tfDist4 && tfDist2 != 0 && tfDist4 != 0) || (tfDist3 <= 20 && tfDist4 <= 120 && tfDist3 != 0 && tfDist4 != 0))
       {
         printf("Turn Servo Right");
